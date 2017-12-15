@@ -17,12 +17,14 @@ const minutes = 60; // seconds per minute
 const hours = 60 * 60; // seconds per hour
 const days = 60 * 60 * 24; // seconds per day
 
+var draftLager;
+var draftPorter;
 
 io.on('connection', function (socket) {
 
     var populateDraft = function (rounds, teams) {
         console.log("populateDraft(" + rounds + ", " + teams.length + ")");
-        var draft = [];
+        let draft = [];
         var total = rounds * teams.length;
         var count = 0;
 
@@ -99,41 +101,50 @@ io.on('connection', function (socket) {
     let start; // when each player started his/her turn
     let totalStart; // when the overall draft started
 
-    let draftLager;
-    let draftPorter;
+
 
     // when moving to the next round
     socket.on('next round', function (data) {
-
-        if (draft.length > 0) {
-            let current;
-
-            // get the next 'player'
-            if (data.name === 'Team Lager')
+        let current = null;
+        if (data.name === 'Team Lager') {
+            if (draftLager && draftLager.length > 0) {
                 current = draftLager.shift();
-            if (data.name === 'Team Porter')
+                start = new Date();
+
+            } else {
+                if (!draftLager) {
+                    draftLager = populateDraft(24, data.players);
+                    current = draftLager.shift();
+                }
+                var s = Math.floor((new Date() - totalStart) / 1000);
+                var str = formatSeconds(s);
+
+            }
+
+        }
+
+        if (data.name === 'Team Porter') {
+            if (draftPorter && draftPorter.length > 0) {
                 current = draftPorter.shift();
+                
+                start = new Date();
 
-            // record when this player started
-            start = new Date();
+            } else {
+                if (!draftPorter) {
+                    draftPorter = populateDraft(24, data.players);
+                    current = draftPorter.shift();
+                }
 
-            // fire off the clock
-            //this.timer = setTimeout(this.tick, 1000);
 
-            // ... else draft is over
-        } else {
-            if (data.name === 'Team Lager')
-                draftLager = populateDraft(24, data.players);
-            if (data.name === 'Team Porter')
-                draftPorter = populateDraft(24, data.players);
-
-            // shut down the UI
-            var s = Math.floor((new Date() - totalStart) / 1000);
-            var str = formatSeconds(s);
+                var s = Math.floor((new Date() - totalStart) / 1000);
+                var str = formatSeconds(s);
+            }
         }
 
         if (current) {
-            socket.broadcast.emit('nextRound', {
+            current.teamName = data.name;
+            
+            io.emit('nextRound', {
                 current
             });
         }
