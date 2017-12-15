@@ -109,6 +109,10 @@ io.on('connection', function (socket) {
         if (data.name === 'Team Lager') {
             if (draftLager && draftLager.length > 0) {
                 current = draftLager.shift();
+                if(draftLager.indexOf(0))
+                {
+                  current.onDeck = draftPorter.indexOf(0)
+                }
                 start = new Date();
 
             } else {
@@ -126,7 +130,10 @@ io.on('connection', function (socket) {
         if (data.name === 'Team Porter') {
             if (draftPorter && draftPorter.length > 0) {
                 current = draftPorter.shift();
-                
+                if(draftPorter.indexOf(0))
+                {
+                  current.onDeck = draftPorter.indexOf(0)
+                }
                 start = new Date();
 
             } else {
@@ -143,7 +150,7 @@ io.on('connection', function (socket) {
 
         if (current) {
             current.teamName = data.name;
-            
+
             io.emit('nextRound', {
                 current
             });
